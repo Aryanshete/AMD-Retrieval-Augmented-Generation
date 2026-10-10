@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match 3 — RAG Query Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Clean Minimal Header -->
+    <header class="navbar">
+      <div class="logo-area">
+        <div class="logo-icon">AMD</div>
+        <div>
+          <h1>Match 3 — RAG Query Console</h1>
+          <p class="subtitle">Corpus-Grounded Question Answering & Exact Citation Retrieval</p>
+        </div>
+      </div>
+      <div class="mode-indicator">
+        <span class="indicator-dot"></span>
+        <span class="indicator-text">Evaluator Client Active</span>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Query Console Section -->
+      <section class="console-card">
+        <!-- Sample Question Selector -->
+        <div class="samples-section">
+          <label class="section-label">Sample Questions:</label>
+          <div class="chips-grid">
+            <button class="chip" data-q="What is the maximum junction temperature of the TQ-40?">Q1 &bull; Junction Temp (TQ-40)</button>
+            <button class="chip" data-q="In which quarter does the TQ-60 enter customer sampling?">Q2 &bull; Sampling Quarter (TQ-60)</button>
+            <button class="chip" data-q="What is the part number of the field-replaceable fan assembly for the TQ-40?">Q3 &bull; Fan Part No (TQ-40)</button>
+            <button class="chip" data-q="Which firmware version fixed ticket ORR-1847?">Q4 &bull; Ticket ORR-1847</button>
+            <button class="chip" data-q="What error code is logged when the thermal throttle engages?">Q5 &bull; Thermal Throttle Error</button>
+            <button class="chip" data-q="What is the default batch timeout, in seconds, in the ingest service?">Q6 &bull; Batch Timeout</button>
+            <button class="chip" data-q="Which backplane pin carries THERM_ALERT# on the TQ-40?">Q7 &bull; Pinout THERM_ALERT#</button>
+            <button class="chip" data-q="What board revision is printed on the asset label?">Q8 &bull; Board Revision</button>
+            <button class="chip" data-q="The production log shows a thermal throttle incident. Which firmware release fixed the underlying defect?">Q9 &bull; Incident Defect Release (Multi-Hop)</button>
+            <button class="chip" data-q="What is the unit price of the TQ-40 at 10,000 unit volume?">Q10 &bull; Encrypted File (Refusal)</button>
+          </div>
+        </div>
+
+        <!-- Query Input -->
+        <div class="input-group">
+          <textarea id="queryInput" placeholder="Enter question..." rows="2"></textarea>
+          <div class="input-actions">
+            <button id="runBtn" class="btn-primary">
+              <span id="btnText">Query RAG</span>
+              <span id="spinner" class="spinner hidden"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Evaluation Results Display -->
+        <div id="resultBox" class="result-box">
+          <div class="result-header">
+            <h3>Evaluation Output</h3>
+            <div class="metrics">
+              <span id="latencyBadge" class="metric-badge">0.0 ms</span>
+              <span id="confidenceBadge" class="metric-badge">Conf: 0.0</span>
+            </div>
+          </div>
+
+          <div class="output-preview">
+            <div class="output-row">
+              <span class="output-label">Answer (Value Only):</span>
+              <div id="answerValue" class="value-display">—</div>
+            </div>
+
+            <div class="output-row">
+              <span class="output-label">Citations (Necessary Files Only):</span>
+              <div id="citationsList" class="citations-container">
+                <span class="placeholder-text">No citations</span>
+              </div>
+            </div>
+
+            <div class="raw-json-container">
+              <span class="json-header">Raw Output (/app/output/&lt;query-id&gt;_output.json):</span>
+              <pre id="jsonOutput">{\n  "answer": "",\n  "citations": [],\n  "confidence": 0.0\n}</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Evidence Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-card">
+          <div class="card-header">
+            <h3>Retrieved Evidence</h3>
+          </div>
+          <div id="evidenceList" class="evidence-list">
+            <p class="placeholder-text">Evidence chunks retrieved from the corpus will appear here.</p>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Clean Footer -->
+    <footer class="footer">
+      <span>Match 3 Evaluator Contract: Value-only answer & exact necessary source citations</span>
+      <span>CLI: <code>python3 /app/app.py --corpus /app/corpus --query-id &lt;id&gt; --query &quot;...&quot;</code></span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
