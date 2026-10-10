@@ -18,20 +18,28 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Free Disk Space on Runner
+        run: |
+          echo "Freeing disk space before checkout..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
+          sudo docker image prune -a -f || true
+          df -h
+
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Maximize Runner Build Space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 4096
-          temp-reserve-mb: 2048
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
+      - name: Verify Dockerfile Exists
+        run: |
+          ls -la
+          test -f Dockerfile || { echo "Dockerfile not found!"; exit 1; }
+
+      - name: Set Lowercase Image Name
+        run: |
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=ghcr.io/${REPO_LOWER}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,7 +55,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
             type=sha
