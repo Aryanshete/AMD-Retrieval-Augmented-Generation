@@ -59,8 +59,22 @@ class VisionEngine:
             import easyocr
             import torch
             has_gpu = torch.cuda.is_available()
-            self._reader = easyocr.Reader(["en"], gpu=has_gpu, verbose=False)
-            logger.info(f"Initialized EasyOCR reader (gpu={has_gpu})")
+
+            # Check offline storage paths
+            ocr_dir = Path("/models/ocr")
+            if not ocr_dir.exists():
+                ocr_dir = Path(__file__).resolve().parent.parent.parent / "models" / "ocr"
+            storage_dir = str(ocr_dir) if ocr_dir.exists() else None
+            download_ok = not (ocr_dir.exists() or os.environ.get("MC3_OFFLINE", ""))
+
+            self._reader = easyocr.Reader(
+                ["en"],
+                model_storage_directory=storage_dir,
+                download_enabled=download_ok,
+                gpu=has_gpu,
+                verbose=False,
+            )
+            logger.info(f"Initialized EasyOCR reader (gpu={has_gpu}, storage={storage_dir})")
         except Exception as exc:
             logger.warning(f"EasyOCR reader could not be initialized: {exc}")
             self._reader = None

@@ -72,6 +72,7 @@ def get_resident_pipeline(corpus_path: Optional[Path] = None) -> Tuple[Optional[
             _RESIDENT_RETRIEVER = retriever
             _RESIDENT_INDEX = persisted
             _RESIDENT_QA_ENGINE = QAEngine(retriever)
+            _RESIDENT_QA_ENGINE.warmup()
             logger.info(f"Loaded resident pipeline from {INDEX_DIR} ({len(retriever.all_chunks)} chunks)")
             return _RESIDENT_RETRIEVER, _RESIDENT_QA_ENGINE
 
@@ -86,8 +87,15 @@ def get_resident_pipeline(corpus_path: Optional[Path] = None) -> Tuple[Optional[
             retriever.save(INDEX_DIR)
             _RESIDENT_RETRIEVER = retriever
             _RESIDENT_QA_ENGINE = QAEngine(retriever)
+            _RESIDENT_QA_ENGINE.warmup()
             logger.info(f"Initialized resident pipeline ({len(res.all_chunks)} chunks)")
             return _RESIDENT_RETRIEVER, _RESIDENT_QA_ENGINE
+
+        # 3. Even if unindexed, instantiate QAEngine to keep LLM warm in VRAM
+        if _RESIDENT_QA_ENGINE is None:
+            retriever = HybridRetriever()
+            _RESIDENT_QA_ENGINE = QAEngine(retriever)
+            _RESIDENT_QA_ENGINE.warmup()
 
         return None, None
 

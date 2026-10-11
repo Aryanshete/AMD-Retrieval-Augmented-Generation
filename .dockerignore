@@ -1,0 +1,13 @@
+.git
+.github
+.gitignore
+tests
+mc3-corpus
+test_run_index
+test_run_output
+web
+*.md
+*.ipynb
+*.pyc
+__pycache__
+.pytest_cache
