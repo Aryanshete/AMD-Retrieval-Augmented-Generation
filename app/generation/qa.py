@@ -55,17 +55,23 @@ class QAEngine:
         # Image chunk extraction (pinouts, labels)
         if chunk.file_type == "image":
             # Pinout / diagram check
-            if "pin" in q_lower or "carries" in q_lower or "therm_alert" in q_lower:
+            if "pin" in q_lower or "carries" in q_lower or "signal" in q_lower or "therm_alert" in q_lower:
                 sig_map = chunk.metadata.get("signal_to_pin", {})
                 for sig, pin in sig_map.items():
-                    if sig.lower() in q_lower or "therm_alert" in sig.lower():
+                    clean_sig = sig.rstrip("#").lower()
+                    if sig.lower() in q_lower or (len(clean_sig) >= 3 and clean_sig in q_lower):
                         return pin
 
+                pin_map = chunk.metadata.get("pin_mappings", {})
+                for pin, sig in pin_map.items():
+                    if re.search(rf"\b{pin}\b", query, re.IGNORECASE):
+                        return sig
+
                 m = re.search(r"Pin\s+([A-Z]\d{1,3})\s*->\s*THERM_ALERT", text, re.IGNORECASE)
-                if m:
+                if m and "therm_alert" in q_lower:
                     return m.group(1)
                 m2 = re.search(r"Signal\s+THERM_ALERT#?\s+is connected to Pin\s+([A-Z]\d{1,3})", text, re.IGNORECASE)
-                if m2:
+                if m2 and "therm_alert" in q_lower:
                     return m2.group(1)
 
             # Asset label / key-value check
@@ -222,11 +228,17 @@ class QAEngine:
                                 return CitationSelector.validate_citations(norm_ans, [c.source_path])
 
                     # Check pin signal on image
-                    if "pin" in q_lower or "therm_alert" in q_lower or "carries" in q_lower:
+                    if "pin" in q_lower or "signal" in q_lower or "carries" in q_lower or "backplane" in q_lower or "therm_alert" in q_lower:
                         sig_map = c.metadata.get("signal_to_pin", {})
                         for sig, pin in sig_map.items():
-                            if sig.lower() in q_lower or "therm_alert" in sig.lower():
+                            clean_sig = sig.rstrip("#").lower()
+                            if sig.lower() in q_lower or (len(clean_sig) >= 3 and clean_sig in q_lower):
                                 return CitationSelector.validate_citations(pin, [c.source_path])
+
+                        pin_map = c.metadata.get("pin_mappings", {})
+                        for pin, sig in pin_map.items():
+                            if re.search(rf"\b{pin}\b", q_raw, re.IGNORECASE):
+                                return CitationSelector.validate_citations(sig, [c.source_path])
 
         # 6. Primary Generative Path: Offline LLM
         if self.llm_engine and self.llm_engine.is_loaded:
