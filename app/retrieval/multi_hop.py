@@ -35,54 +35,70 @@ class MultiHopReasoner:
         Returns:
             Tuple of (evidence_chunks, citations) containing both source files.
         """
-        # Stage 1: Retrieve log chunk for the incident
-        log_candidates = self.retriever.retrieve(
+        # Stage 1: Retrieve candidate chunks describing the initial incident / symptom
+        candidates = self.retriever.retrieve(
             query=query,
-            top_k=5,
-            expected_file_types={"log"},
+            top_k=8,
         )
-        if not log_candidates:
+        if not candidates:
             return None
 
-        # Filter to actual log chunks
-        log_chunks = [c for c, _ in log_candidates if c.file_type == "log"]
-        if not log_chunks:
-            return None
+        # Prefer log chunk if query explicitly mentions log, otherwise general incident chunks
+        if "log" in query.lower():
+            log_only = [c for c, _ in candidates if c.file_type == "log"]
+            primary_chunk = log_only[0] if log_only else candidates[0][0]
+        else:
+            primary_chunks = [c for c, _ in candidates if c.file_type in ["log", "text"] or "incident" in c.text.lower() or "error" in c.text.lower() or "throttle" in c.text.lower()]
+            primary_chunk = primary_chunks[0] if primary_chunks else candidates[0][0]
 
-        primary_log_chunk = log_chunks[0]
 
-        # Stage 2: Extract bridge identifiers or keywords from log chunk
-        # Look for ticket identifiers like ORR-XXXX, error codes like EXXXX, or keywords like "thermal throttle"
-        bridge_identifiers = primary_log_chunk.extract_identifiers()
-        
-        # Also check for semantic correlation if no direct ticket ID in the log
-        # In sample: log mentions "ERROR E7731: thermal throttle engaged", while bug database mentions "ORR-1847 | thermal throttle"
-        second_stage_queries = []
-        for b_id in bridge_identifiers:
-            second_stage_queries.append(b_id)
-        
-        # Add symptom keywords from log text
-        if "thermal throttle" in primary_log_chunk.text.lower() or "thermal" in query.lower():
-            second_stage_queries.append("thermal throttle")
-            second_stage_queries.append("die temperature")
+        # Stage 2: Extract bridge identifiers or keywords from primary chunk and query
+        bridge_queries: List[str] = []
 
-        # Stage 3: Retrieve downstream evidence chunk from CSV / bug database
+        # 2a. Ticket numbers (e.g. ORR-1847, BUG-102)
+        ticket_matches = re.findall(r"\b([A-Z]{2,5}-\d+)\b", primary_chunk.text, re.IGNORECASE)
+        for t in ticket_matches:
+            if t.upper() not in bridge_queries:
+                bridge_queries.append(t.upper())
+
+        # 2b. Error codes (e.g. E7731)
+        err_matches = re.findall(r"\b(E\d{4,5})\b", primary_chunk.text)
+        for e in err_matches:
+            if e not in bridge_queries:
+                bridge_queries.append(e)
+
+        # 2c. Extracted identifiers from model chunk
+        for b_id in primary_chunk.extract_identifiers():
+            if b_id not in bridge_queries:
+                bridge_queries.append(b_id)
+
+        # 2d. Incident symptoms from text
+        symptoms = ["thermal throttle", "memory leak", "sensor reports high", "hang", "crash", "clocks reduced"]
+        for s in symptoms:
+            if s in primary_chunk.text.lower() or s in query.lower():
+                bridge_queries.append(s)
+
+        # Stage 3: Retrieve downstream resolution chunk from another document
         downstream_chunk = None
-        for q_sub in second_stage_queries:
+        for q_sub in bridge_queries:
             db_candidates = self.retriever.retrieve(
-                query=f"{q_sub} fixed_in firmware release defect",
-                top_k=5,
-                expected_file_types={"csv"},
+                query=f"{q_sub} fixed_in firmware version release defect resolution",
+                top_k=8,
             )
-            csv_chunks = [c for c, _ in db_candidates if c.file_type == "csv"]
-            if csv_chunks:
-                downstream_chunk = csv_chunks[0]
+            for c, _ in db_candidates:
+                if c.source_path != primary_chunk.source_path:
+                    # Verify downstream chunk mentions resolution or fix
+                    c_lower = c.text.lower()
+                    if any(k in c_lower for k in ["fixed", "version", "release", "closed", "resolved", "patch", "4."]):
+                        downstream_chunk = c
+                        break
+            if downstream_chunk:
                 break
 
-        if downstream_chunk and downstream_chunk.source_path != primary_log_chunk.source_path:
+        if downstream_chunk and downstream_chunk.source_path != primary_chunk.source_path:
             # Retain reasoning chain documents
-            evidence_chunks = [primary_log_chunk, downstream_chunk]
-            citations = [primary_log_chunk.source_path, downstream_chunk.source_path]
+            evidence_chunks = [primary_chunk, downstream_chunk]
+            citations = [primary_chunk.source_path, downstream_chunk.source_path]
             return evidence_chunks, citations
 
         return None

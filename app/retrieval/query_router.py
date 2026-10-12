@@ -88,11 +88,22 @@ class QueryRouter:
             or "carries" in q_lower
             or "backplane" in q_lower
             or "pinout" in q_lower
+            or "connector" in q_lower
             or "asset label" in q_lower
+            or "label" in q_lower
+            or "sticker" in q_lower
+            or "photo" in q_lower
+            or "image" in q_lower
+            or "diagram" in q_lower
+            or "printed on" in q_lower
+            or "printed" in q_lower
+            or "stamped" in q_lower
             or "board revision" in q_lower
             or "barcode" in q_lower
-            or "serial number printed" in q_lower
+            or "serial number" in q_lower
+            or "chassis" in q_lower
             or "therm_alert" in q_lower
+            or ("revision" in q_lower and ("board" in q_lower or "label" in q_lower or "hardware" in q_lower))
         ):
             return RoutedQuery(
                 original_query=q_raw,
@@ -172,16 +183,18 @@ class QueryRouter:
             or "tq-" in q_lower
             or "part number" in q_lower
             or "fan assembly" in q_lower
+            or "revision" in q_lower
         ):
             return RoutedQuery(
                 original_query=q_raw,
                 category=QueryCategory.SPECIFICATION,
                 identifiers=identifiers,
-                prioritized_file_types={"pdf", "docx", "xlsx"},
+                prioritized_file_types={"pdf", "docx", "xlsx", "image"},
                 is_multi_hop=False,
                 is_historical_requested=is_historical,
                 clean_query=q_raw,
             )
+
 
         return RoutedQuery(
             original_query=q_raw,

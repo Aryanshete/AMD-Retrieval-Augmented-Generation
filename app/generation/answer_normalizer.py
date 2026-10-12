@@ -59,10 +59,20 @@ class AnswerNormalizer:
         if q_fy:
             return q_fy.group(1).upper()
 
-        # 5. Check for board revision pattern (e.g., 'REV-C2')
-        rev = re.search(r"\b(REV-[A-Z0-9]+)\b", ans, re.IGNORECASE)
+        # 5. Check for board revision pattern (e.g., 'REV-C2', 'REV C2', 'REV_C2', or 'C2' when query asks for revision)
+        rev = re.search(r"\bREV[-_.]\s*([A-Z0-9]+)\b", ans, re.IGNORECASE)
+        if not rev:
+            rev = re.search(r"\bREV\s+([A-Z0-9]+)\b", ans, re.IGNORECASE)
+        if not rev:
+            rev = re.search(r"\bREVISION[:\s]+([A-Z0-9]+)\b", ans, re.IGNORECASE)
         if rev:
-            return rev.group(1).upper()
+            return f"REV-{rev.group(1).upper()}"
+
+        if "revision" in query.lower() or "rev" in query.lower():
+            m_code = re.search(r"\b([A-Z]\d{1,2})\b", ans, re.IGNORECASE)
+            if m_code:
+                return f"REV-{m_code.group(1).upper()}"
+
 
         # 6. Check for part numbers (e.g., 'ORR-FAN-2214-B')
         part = re.search(r"\b(ORR-[A-Z0-9-]+-[A-Z0-9]+)\b", ans, re.IGNORECASE)

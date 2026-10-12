@@ -43,7 +43,8 @@ def compute_document_type_relevance(
     """Calculate score boost based on expected vs chunk document types."""
     if not expected_file_types:
         return 0.0
-    return 1.0 if chunk.file_type in expected_file_types else -0.5
+    return 0.6 if chunk.file_type in expected_file_types else 0.0
+
 
 
 class CandidateReranker:

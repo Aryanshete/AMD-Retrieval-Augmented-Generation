@@ -143,17 +143,44 @@ class VisionEngine:
                     if signal_norm != signal:
                         signal_to_pin[signal_norm] = pin.text
 
-        # 2. Key-Value Horizontal Alignment (e.g. Labels, spec sheets)
+        # 2. Key-Value Extraction (Horizontal alignment + single-line label extraction)
         for i, it in enumerate(items):
+            # Check single-box key-values (e.g. "BOARD REVISION REV-C2", "MODEL TQ-40")
+            m_kv = re.match(r"^(MODEL|BOARD\s+REVISION|REVISION|REV|SN|SERIAL\s+NUMBER|PART\s+NUMBER|PN|LOT|BATCH|MFG|DATE)[\s:]+(.+)$", it.text, re.IGNORECASE)
+            if m_kv:
+                k_clean = m_kv.group(1).strip().upper()
+                v_clean = m_kv.group(2).strip()
+                key_values[k_clean] = v_clean
+                if "REVISION" in k_clean:
+                    key_values["BOARD REVISION"] = v_clean
+
+            # Check direct revision pattern in item text
+            m_rev = re.search(r"\b(REV-[A-Z0-9]+)\b", it.text, re.IGNORECASE)
+            if m_rev:
+                key_values["BOARD REVISION"] = m_rev.group(1).upper()
+                key_values["REVISION"] = m_rev.group(1).upper()
+
+            # Check horizontal alignment across adjacent boxes
             for j, other in enumerate(items):
                 if i == j:
                     continue
                 y_diff = abs(it.cy - other.cy)
                 x_gap = other.box[0] - it.box[2]
-                if y_diff < 20 and 0 < x_gap < 140:
+                if y_diff < 30 and -10 < x_gap < 200:
                     key = it.text.strip().rstrip(":")
                     val = other.text.strip()
                     key_values[key] = val
+                    if "revision" in key.lower():
+                        key_values["BOARD REVISION"] = val
+
+        # Also inspect full OCR text for standard label patterns
+        m_full_rev = re.search(r"BOARD\s+REVISION[:\s]+(REV-[A-Z0-9]+)", full_text, re.IGNORECASE)
+        if m_full_rev:
+            key_values["BOARD REVISION"] = m_full_rev.group(1).upper()
+
+        m_full_mod = re.search(r"MODEL[:\s]+([A-Z0-9-]+)", full_text, re.IGNORECASE)
+        if m_full_mod:
+            key_values["MODEL"] = m_full_mod.group(1).upper()
 
         # Compose structured relationship description text
         rel_lines = []
@@ -164,7 +191,7 @@ class VisionEngine:
 
         if key_values:
             rel_lines.append("\nKey-Value Pairs:")
-            for k, v in key_values.items():
+            for k, v in sorted(key_values.items()):
                 rel_lines.append(f"{k}: {v}")
 
         rel_text = "\n".join(rel_lines)

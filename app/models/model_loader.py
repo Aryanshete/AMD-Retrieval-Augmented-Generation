@@ -281,11 +281,11 @@ class LLMInferenceEngine:
                     "Rules:\n"
                     "1. Extract ONLY the concise target value (e.g., number, code, part number, date, revision, version).\n"
                     "2. Never output complete sentences or conversational explanations. Do not include units like °C or s unless part of a code.\n"
-                    "3. If the answer is not explicitly found in the documents, or if the documents are inaccessible or encrypted, respond EXACTLY with:\n"
-                    "UNANSWERABLE\n"
-                    "4. If answer is found, format your response EXACTLY as:\n"
+                    "3. Never guess or substitute numbers from unrelated tables (e.g. never use RMA replacement costs for purchase unit prices). If the documents do not explicitly contain the exact answer, respond EXACTLY with: UNANSWERABLE\n"
+                    "4. For board revisions, always include the full qualifier prefix (e.g. 'REV-C2', not 'C2').\n"
+                    "5. If answer is found, format your response EXACTLY as:\n"
                     "ANSWER: <concise value>\n"
-                    "SOURCE: <cited document path>"
+                    "SOURCE: <cited document path(s)>"
                 ),
             },
             {
