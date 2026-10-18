@@ -18,17 +18,21 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Free Disk Space on Runner
-        run: |
-          echo "Freeing disk space before checkout..."
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/share/swift
-          sudo docker system prune -a --volumes -f || true
-          df -h
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v9
+        with:
+          build-mount-path: /var/lib/docker
+          root-reserve-mb: 2048
+          temp-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+
+      - name: Restart Docker
+        run: sudo service docker restart
 
 
       - name: Checkout Repository
