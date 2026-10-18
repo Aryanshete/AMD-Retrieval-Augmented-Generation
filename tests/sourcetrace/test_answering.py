@@ -317,8 +317,6 @@ class VisionTests(unittest.TestCase):
         self.assertFalse(any(has_image for _, has_image in backend.calls))
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class BridgeTests(unittest.TestCase):
@@ -359,3 +357,8 @@ def json_bool(value: bool) -> str:
     import json
 
     return json.dumps({"needed": value})
+
+
+if __name__ == "__main__":
+    unittest.main()
+

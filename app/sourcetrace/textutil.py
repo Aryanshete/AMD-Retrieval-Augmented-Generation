@@ -109,13 +109,16 @@ def tokenize(text: str) -> list[str]:
 
 
 def query_identifiers(query: str) -> list[str]:
-    """Identifier-looking tokens in a query (``ORR-1847``, ``E7731``, ``TQ-40``)."""
+    """Identifier-looking tokens in a query (``ORR-1847``, ``E7731``, ``TQ-40``, ``THERM_ALERT#``)."""
     found: list[str] = []
     for raw in re.findall(r"[A-Za-z0-9][A-Za-z0-9_./#-]*[A-Za-z0-9#]", query):
         has_digit = any(c.isdigit() for c in raw)
         has_alpha = any(c.isalpha() for c in raw)
-        if has_digit and (has_alpha or "-" in raw or "." in raw):
-            found.append(raw.lower().strip(".,;:"))
+        is_signal = ("_" in raw or "#" in raw) and (raw.isupper() or has_digit)
+        if (has_digit and (has_alpha or "-" in raw or "." in raw)) or is_signal:
+            cleaned = raw.lower().strip(".,;:")
+            if cleaned and cleaned not in found:
+                found.append(cleaned)
     return found
 
 

@@ -40,8 +40,8 @@ from .timing import Deadline
 log = logging.getLogger("sourcetrace.answer")
 
 MAX_PROMPT_CHARS = 18000
-_IDENT_RE = re.compile(r"\b(?=[A-Za-z0-9-]*[A-Za-z])(?=[A-Za-z0-9-]*\d)[A-Za-z][A-Za-z0-9-]{2,}\b")
-MAX_BRIDGE_CHECKS = 2
+_IDENT_RE = re.compile(r"\b(?=[A-Za-z0-9_-]*[A-Za-z])(?=[A-Za-z0-9_-]*\d)[A-Za-z][A-Za-z0-9_-]{2,}\b")
+MAX_BRIDGE_CHECKS = 3
 MIN_TIME_FOR_CALL = 4.0
 
 
@@ -137,7 +137,7 @@ class Reasoner:
         if not self.settings.vision_lookup or corpus_root is None:
             return
         done = 0
-        for p in passages[:4]:
+        for p in passages[:6]:
             c = p.chunk
             if c.kind != KIND_IMAGE or c.loc != "image" or done >= 2:
                 continue

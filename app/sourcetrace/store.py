@@ -197,7 +197,7 @@ class Index:
 
 
 def _atomic_write_bytes(path: Path, data: bytes) -> None:
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp_")
     try:
         with os.fdopen(fd, "wb") as handle:
             handle.write(data)

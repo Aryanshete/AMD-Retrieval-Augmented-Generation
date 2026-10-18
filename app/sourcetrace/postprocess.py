@@ -26,6 +26,10 @@ _UNITS = (
 _NUM_UNIT_RE = re.compile(rf"([-+]?\d[\d,]*\.?\d*)\s*(?:{_UNITS})\.?", re.IGNORECASE)
 _CURRENCY_RE = re.compile(r"^[\$€£]\s*(\d[\d,]*\.?\d*)$")
 _LEAD_RE = re.compile(r"^(?:final\s+)?answer\s*[:=-]\s*", re.IGNORECASE)
+_QUALIFIERS_RE = re.compile(
+    r"^(?:pin|part|ticket|version|revision|quarter)(?:\s*[:=]|\s+)\s*",
+    re.IGNORECASE,
+)
 
 
 def clean_answer(raw: object) -> str:
@@ -35,6 +39,7 @@ def clean_answer(raw: object) -> str:
     text = str(raw).strip()
     text = re.sub(r"^```(?:json|text)?|```$", "", text).strip()
     text = _LEAD_RE.sub("", text)
+    text = _QUALIFIERS_RE.sub("", text)
     text = " ".join(text.split())
     if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'`":
         text = text[1:-1].strip()
